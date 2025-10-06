@@ -393,4 +393,4 @@ For issues and questions:
 
 ## License
 
-This infrastructure code is provided as-is for disaster recovery purposes.
+This infrastructure code is provided as-is for all purposes.
