@@ -1,0 +1,20 @@
+# Example terraform.tfvars file - copy to terraform.tfvars and update values
+
+# Basic Configuration
+location    = "East US 2"
+environment = "dr"
+app_name    = "myapp"
+
+# Azure Front Door Configuration
+existing_front_door_id = "/subscriptions/YOUR-SUBSCRIPTION-ID/resourceGroups/YOUR-RG/providers/Microsoft.Cdn/profiles/YOUR-FRONT-DOOR-NAME"
+
+# On-premises SQL Server Configuration
+on_prem_sql_server = {
+  server_name   = "your-sql-server.company.local"
+  database_name = "YourDatabase"
+  port          = 1433
+}
+
+# ASE and App Service Plan Configuration
+ase_pricing_tier      = "I1v2"
+app_service_plan_sku  = "I1v2"
