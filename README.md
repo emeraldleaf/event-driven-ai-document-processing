@@ -1,4 +1,4 @@
-# Azure Enterprise Infrastructure (PCI DSS Compliant)
+# Azure Enterprise Infrastructure
 
 This repository contains Terraform Infrastructure as Code (IaC) for deploying a enterprise environment in Azure with the following components:
 
