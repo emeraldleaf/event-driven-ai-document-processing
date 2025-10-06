@@ -1,6 +1,6 @@
 # Azure Enterprise Infrastructure (PCI DSS Compliant)
 
-This repository contains Terraform Infrastructure as Code (IaC) for deploying a **PCI DSS compliant** enterprise environment in Azure with the following components:
+This repository contains Terraform Infrastructure as Code (IaC) for deploying a enterprise environment in Azure with the following components:
 
 - **App Service Environment v3** (ASE v3) with zone redundancy
 - **Azure Function App** (.NET 8 on Windows) with Key Vault integration
