@@ -208,6 +208,139 @@ resource "azurerm_cosmosdb_sql_container" "session_state" {
   default_ttl = 86400
 }
 
+# Container for Document Metadata
+resource "azurerm_cosmosdb_sql_container" "documents" {
+  name                  = "Documents"
+  resource_group_name   = azurerm_cosmosdb_account.main.resource_group_name
+  account_name          = azurerm_cosmosdb_account.main.name
+  database_name         = azurerm_cosmosdb_sql_database.application.name
+  partition_key_path    = "/uploadDate"
+  partition_key_version = 2
+
+  autoscale_settings {
+    max_throughput = 4000
+  }
+
+  indexing_policy {
+    indexing_mode = "consistent"
+
+    included_path {
+      path = "/*"
+    }
+
+    excluded_path {
+      path = "/\"_etag\"/?"
+    }
+
+    # Composite index for common queries
+    composite_index {
+      index {
+        path  = "/uploadDate"
+        order = "descending"
+      }
+
+      index {
+        path  = "/status"
+        order = "ascending"
+      }
+    }
+
+    composite_index {
+      index {
+        path  = "/userId"
+        order = "ascending"
+      }
+
+      index {
+        path  = "/uploadDate"
+        order = "descending"
+      }
+    }
+  }
+
+  # Keep documents for configured retention period
+  default_ttl = var.document_retention_days * 86400
+
+  unique_key {
+    paths = ["/blobUrl"]
+  }
+}
+
+# Container for Extracted Data
+resource "azurerm_cosmosdb_sql_container" "extracted_data" {
+  name                  = "ExtractedData"
+  resource_group_name   = azurerm_cosmosdb_account.main.resource_group_name
+  account_name          = azurerm_cosmosdb_account.main.name
+  database_name         = azurerm_cosmosdb_sql_database.application.name
+  partition_key_path    = "/documentId"
+  partition_key_version = 2
+
+  autoscale_settings {
+    max_throughput = 4000
+  }
+
+  indexing_policy {
+    indexing_mode = "consistent"
+
+    included_path {
+      path = "/*"
+    }
+
+    excluded_path {
+      path = "/\"_etag\"/?"
+    }
+
+    # Index for full-text search on extracted content
+    included_path {
+      path = "/extractedFields/*"
+    }
+  }
+
+  # Match document retention
+  default_ttl = var.document_retention_days * 86400
+
+  unique_key {
+    paths = ["/documentId"]
+  }
+}
+
+# Container for Processing Jobs
+resource "azurerm_cosmosdb_sql_container" "processing_jobs" {
+  name                  = "ProcessingJobs"
+  resource_group_name   = azurerm_cosmosdb_account.main.resource_group_name
+  account_name          = azurerm_cosmosdb_account.main.name
+  database_name         = azurerm_cosmosdb_sql_database.application.name
+  partition_key_path    = "/status"
+  partition_key_version = 2
+
+  autoscale_settings {
+    max_throughput = 1000
+  }
+
+  indexing_policy {
+    indexing_mode = "consistent"
+
+    included_path {
+      path = "/*"
+    }
+
+    composite_index {
+      index {
+        path  = "/status"
+        order = "ascending"
+      }
+
+      index {
+        path  = "/createdAt"
+        order = "descending"
+      }
+    }
+  }
+
+  # Auto-expire completed jobs after 90 days
+  default_ttl = 7776000 # 90 days
+}
+
 # Private Endpoint for Cosmos DB
 resource "azurerm_private_endpoint" "cosmos" {
   name                = "pe-cosmos-${local.app_name}-${local.environment}"

@@ -82,6 +82,42 @@ resource "azurerm_servicebus_queue" "dlq_monitor" {
   default_message_ttl = "P30D" # 30 days
 }
 
+# Queue for Document Processing
+resource "azurerm_servicebus_queue" "document_processing" {
+  name         = "document-processing"
+  namespace_id = azurerm_servicebus_namespace.main.id
+
+  enable_partitioning = true
+
+  dead_lettering_on_message_expiration = true
+  max_delivery_count                   = 5 # Retry up to 5 times
+  default_message_ttl                  = "P1D" # 1 day
+
+  requires_duplicate_detection = true
+  duplicate_detection_history_time_window = "PT10M"
+
+  lock_duration = "PT5M" # 5 minutes to process document
+
+  # Enable batched operations for better performance
+  enable_batched_operations = true
+}
+
+# Queue for Document Extraction Complete (notifications)
+resource "azurerm_servicebus_queue" "document_extraction_complete" {
+  name         = "document-extraction-complete"
+  namespace_id = azurerm_servicebus_namespace.main.id
+
+  enable_partitioning = true
+
+  dead_lettering_on_message_expiration = true
+  max_delivery_count                   = 3
+  default_message_ttl                  = "P7D" # 7 days
+
+  lock_duration = "PT2M"
+
+  enable_batched_operations = true
+}
+
 # Topic for Event Broadcasting
 resource "azurerm_servicebus_topic" "domain_events" {
   name         = "domain-events"

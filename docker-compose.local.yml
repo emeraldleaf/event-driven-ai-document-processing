@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # Azure Storage Emulator (Azurite)
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    container_name: doc-processor-azurite
+    ports:
+      - "10000:10000"  # Blob service
+      - "10001:10001"  # Queue service
+      - "10002:10002"  # Table service
+    volumes:
+      - azurite-data:/data
+    command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --loose"
+    networks:
+      - doc-processor-network
+
+  # Cosmos DB Emulator (Linux)
+  cosmos-db:
+    image: mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:latest
+    container_name: doc-processor-cosmos
+    ports:
+      - "8081:8081"
+      - "10251-10254:10251-10254"
+    environment:
+      - AZURE_COSMOS_EMULATOR_PARTITION_COUNT=10
+      - AZURE_COSMOS_EMULATOR_ENABLE_DATA_PERSISTENCE=true
+      - AZURE_COSMOS_EMULATOR_IP_ADDRESS_OVERRIDE=127.0.0.1
+    volumes:
+      - cosmos-data:/data
+    networks:
+      - doc-processor-network
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+
+  # Document Processing Web UI
+  web-ui:
+    build:
+      context: ./src/web
+      dockerfile: Dockerfile
+    container_name: doc-processor-web
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:7071/api
+      - REACT_APP_STORAGE_URL=http://localhost:10000
+    depends_on:
+      - azurite
+    networks:
+      - doc-processor-network
+    volumes:
+      - ./src/web:/app
+      - /app/node_modules
+
+volumes:
+  azurite-data:
+    driver: local
+  cosmos-data:
+    driver: local
+
+networks:
+  doc-processor-network:
+    driver: bridge
