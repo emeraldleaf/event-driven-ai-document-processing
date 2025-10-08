@@ -1,396 +1,545 @@
-# Azure Enterprise Infrastructure
+# Document Processing System with Claude AI
 
-This repository contains Terraform Infrastructure as Code (IaC) for deploying a enterprise environment in Azure with the following components:
+**Enterprise-grade, event-driven document processing system** that extracts structured data from documents using Claude AI and Azure cloud services.
 
-- **App Service Environment v3** (ASE v3) with zone redundancy
-- **Azure Function App** (.NET 8 on Windows) with Key Vault integration
-- **Azure App Service** (.NET 8 on Windows) for single-page applications
-- **Private Endpoints** for all services (Function App, Web App, Key Vault)
-- **Azure Front Door** with Web Application Firewall (WAF)
-- **Azure Bastion** for secure management access
-- **Management VM** with pre-installed Azure tools
-- **Hybrid SQL Connection** to on-premises database via Service Bus
-- **Network Security Groups** with HTTPS-only traffic
+[![Code Quality](https://img.shields.io/badge/Code%20Quality-A%20(9%2F10)-brightgreen)](CODACY_ANALYSIS_REPORT.md)
+[![Complexity](https://img.shields.io/badge/Complexity-2.3%20CCN-brightgreen)](CODACY_ANALYSIS_REPORT.md)
+[![Security](https://img.shields.io/badge/Security-Patched-green)](SECURITY_FIXES.md)
 
-## Architecture Overview
+---
+
+## 🎯 What This System Does
+
+**Upload a document** (PDF, image) → **AI extracts structured data** → **Results stored in database**
+
+- **Handles**: Invoices, receipts, forms, any document with structured data
+- **Extracts**: Vendor info, line items, totals, dates, custom fields
+- **Scales**: Automatically handles high-volume processing
+- **Cost**: ~$60/month for POC, ~$0.01 per document
+
+---
+
+## 🏗️ Architecture
 
 ```
-Internet → Azure Front Door + WAF → Private Link → Virtual Network
-                    ↓ (Blocks malicious traffic)
-         
-Virtual Network (10.0.0.0/16) - PCI DSS Compliant
-├─ ASE v3 Subnet (10.0.1.0/24) - Zone Redundant
-│  └─ App Service Environment v3
-│     ├─ Function App (.NET 8) → Elastic Premium (EP1) - Dynamic Scaling
-│     └─ Web App (.NET 8) → Dedicated (I1v2) - Single Page Application
-│
-├─ Private Endpoints Subnet (10.0.2.0/24) - HTTPS Only
-│  ├─ Function App Private Endpoint
-│  ├─ Web App Private Endpoint  
-│  └─ Key Vault Private Endpoint
-│
-├─ Hybrid Subnet (10.0.3.0/24)
-│  └─ Service Bus Hybrid Connection → On-Prem SQL
-│
-├─ Azure Bastion Subnet (10.0.4.0/26)
-│  └─ Azure Bastion (Secure Management Access)
-│
-└─ Management Subnet (10.0.5.0/24)
-   └─ Management VM (Windows Server 2022 + Azure Tools)
+┌─────────────┐
+│   Upload    │ User uploads document via web UI
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────────────────┐
+│   Blob Storage (incoming)   │ Event Source - triggers processing
+└──────┬──────────────────────┘
+       │ BlobCreated Event
+       ▼
+┌─────────────────────────────┐
+│      Event Grid             │ Event Router - decouples components
+└──────┬──────────────────────┘
+       │
+       ▼
+┌─────────────────────────────┐
+│    Service Bus Queue        │ Message Buffer - ensures delivery
+│  • Guaranteed delivery      │ • Handles traffic spikes
+│  • Dead letter queue        │ • Auto-retry on failure
+└──────┬──────────────────────┘
+       │ Queue Trigger
+       ▼
+┌─────────────────────────────┐
+│    Azure Function           │ Event Consumer - processes documents
+│  • Auto-scales (1-200)      │ • Calls Claude AI
+│  • Serverless compute       │ • Stateless design
+└──────┬──────────────────────┘
+       │
+       ├──▶ Claude AI (Anthropic) - Extracts structured data
+       │
+       ├──▶ Cosmos DB - Stores metadata + extracted data
+       │
+       └──▶ Service Bus - Publishes completion events
 ```
 
-## 🔒 PCI DSS Compliance Features
+### **Distributed Systems Patterns**
+- ✅ Event-driven architecture
+- ✅ Horizontal auto-scaling
+- ✅ Stateless services
+- ✅ At-least-once delivery
+- ✅ Retry with exponential backoff
+- ✅ Dead letter queues
+- ✅ Polyglot persistence
 
-- **Network Isolation**: All services use private endpoints, no public access
-- **Encryption**: TLS 1.2+ enforced, internal encryption enabled
-- **Web Application Firewall**: OWASP Core Rule Set, bot protection, rate limiting
-- **Access Control**: Managed identities, Key Vault integration, NSG rules
-- **Audit Logging**: Azure Bastion access logs, Key Vault audit trails
-- **Secure Management**: No direct VM access, browser-based Bastion connection
+**[Read full architecture guide →](DISTRIBUTED_SYSTEMS_PATTERNS.md)**
 
-## 🚀 Hybrid Hosting Architecture Benefits
+---
 
-**Elastic Premium for Functions (EP1)**:
-- ✅ **Dynamic Auto-Scaling**: Automatically scales based on demand (0-20 instances)
-- ✅ **No Cold Starts**: Pre-warmed instances ensure immediate response
-- ✅ **Cost Efficiency**: Pay for actual usage with minimum baseline
-- ✅ **VNet Integration**: Full network isolation within ASE v3
-- ✅ **Zone Redundancy**: High availability across availability zones
+## 🚀 Quick Start
 
-**Dedicated for Web App (I1v2)**:
-- ✅ **Predictable Performance**: Fixed resources for consistent SPA delivery
-- ✅ **Simple Management**: No complex scaling configuration needed
-- ✅ **Cost Predictability**: Fixed monthly cost regardless of traffic
-- ✅ **ASE Integration**: Full network isolation and security
-- ✅ **Optimal for SPAs**: Right-sized for static content serving
+### Option 1: Local Development (5 minutes)
 
-## Prerequisites
-
-1. **Azure CLI** installed and configured
-2. **Terraform** >= 1.0 installed
-3. **Azure subscription** with appropriate permissions
-4. **Existing Azure Front Door** resource
-5. **On-premises SQL Server** accessible for hybrid connection
-
-## Quick Start
-
-### 1. Configure Variables
-
-Copy the example variables file and update with your values:
+**No Azure account needed!**
 
 ```bash
+# 1. Copy environment template
+cp .env.example .env
+
+# 2. Edit .env - Set ENABLE_MOCK_AI=true for testing without API key
+vim .env
+
+# 3. Run setup script
+./scripts/setup-local.sh
+
+# 4. Start Azure Functions (Terminal 1)
+cd src/functions
+source .venv/bin/activate
+func start
+
+# 5. Start Web UI (Terminal 2)
+cd src/web
+npm install
+npm start
+
+# 6. Open http://localhost:3000
+# Upload documents and see them processed!
+```
+
+**[Detailed local setup guide →](QUICKSTART.md)**
+
+---
+
+### Option 2: Deploy to Azure
+
+```bash
+# 1. Configure deployment
 cp terraform.tfvars.example terraform.tfvars
-```
+# Edit terraform.tfvars with your settings
 
-Edit `terraform.tfvars` with your specific configuration:
-
-```hcl
-# Basic Configuration
-location    = "East US 2"
-environment = "dr"
-app_name    = "myapp"
-
-# Azure Front Door Configuration (REQUIRED)
-existing_front_door_id = "/subscriptions/YOUR-SUBSCRIPTION-ID/resourceGroups/YOUR-RG/providers/Microsoft.Cdn/profiles/YOUR-FRONT-DOOR-NAME"
-
-# On-premises SQL Server Configuration
-on_prem_sql_server = {
-  server_name   = "your-sql-server.company.local"
-  database_name = "YourDatabase"
-  port          = 1433
-}
-
-# Management VM Configuration (REQUIRED for PCI compliance)
-management_vm_admin_password = "YourSecurePassword123!"  # Minimum 12 characters
-```
-
-### 2. Validate Configuration
-
-Run the validation script to check your configuration without deploying:
-
-```bash
-chmod +x validate.sh
-./validate.sh
-```
-
-This script will:
-- Validate Terraform syntax and formatting
-- Check Azure CLI authentication
-- Verify resource name availability
-- Create a deployment plan (dry run)
-- Estimate costs
-- Validate Azure Front Door accessibility
-
-### 3. Deploy Infrastructure
-
-If validation passes, deploy the infrastructure:
-
-```bash
-# Initialize Terraform
+# 2. Deploy infrastructure (~15 minutes)
 terraform init
-
-# Plan deployment
 terraform plan
-
-# Apply configuration (this will take 60-90 minutes due to ASE v3)
 terraform apply
+
+# 3. Deploy function code
+cd src/functions
+func azure functionapp publish $(terraform output -raw document_function_app_name)
+
+# 4. Deploy web UI
+cd src/web
+npm run build
+az storage blob upload-batch \
+  --account-name $(terraform output -raw document_storage_account_name) \
+  --destination '$web' \
+  --source build/
+
+# 5. Get your URLs
+terraform output quick_start_azure
 ```
 
-### 4. Test Connectivity
+**[Full deployment guide →](DOCUMENT_PROCESSING_GUIDE.md)**
 
-After deployment, run the connectivity test script:
+---
+
+## 💡 Features
+
+### 🤖 **AI-Powered Extraction**
+- **Claude 3.5 Sonnet** for superior accuracy
+- Handles invoices, receipts, forms, general documents
+- Extracts vendor info, line items, totals, dates, custom fields
+- Confidence scoring and validation
+- Natural language prompts (easily customizable)
+
+### ⚡ **Event-Driven Architecture**
+- Blob upload triggers automatic processing
+- Event Grid → Service Bus → Azure Functions
+- Decoupled components for independent scaling
+- Guaranteed message delivery
+- Automatic retry on failures
+
+### 📈 **High-Volume Scalability**
+- Auto-scales to 200+ function instances
+- Processes thousands of documents/hour
+- Queue buffering handles traffic spikes
+- Partitioned data storage (Cosmos DB)
+- Zero dropped documents
+
+### 🛡️ **Enterprise-Ready**
+- Comprehensive error handling
+- Dead letter queues for failed messages
+- Complete audit trail
+- Monitoring with Application Insights
+- Security: Managed identities, Key Vault, TLS 1.2+
+
+### 💰 **Cost-Optimized**
+- **POC Mode**: ~$60/month
+  - Consumption Functions (serverless)
+  - Serverless Cosmos DB
+  - Mock AI for testing (no API costs)
+- **Production Mode**: ~$200-400/month
+  - Premium Functions with VNet
+  - Provisioned Cosmos DB
+  - Multi-region replication
+- **Claude AI**: ~$0.01 per document
+
+### 🧪 **Local Development**
+- Full Docker-based environment
+- Azurite (storage emulator)
+- Cosmos DB emulator
+- Mock AI mode (test without costs)
+- Hot reload for fast iteration
+
+---
+
+## 📊 What Gets Extracted
+
+### Sample Invoice → Structured JSON
+
+```json
+{
+  "document_type": "invoice",
+  "vendor": {
+    "name": "Acme Corp",
+    "address": "123 Main St, Anytown, USA",
+    "tax_id": "12-3456789"
+  },
+  "invoice_number": "INV-2024-001",
+  "date": "2024-01-15",
+  "line_items": [
+    {
+      "description": "Professional Services",
+      "quantity": 10.0,
+      "unit_price": 150.00,
+      "total": 1500.00
+    }
+  ],
+  "subtotal": 1500.00,
+  "tax": 150.00,
+  "total": 1650.00,
+  "currency": "USD",
+  "confidence": 0.95
+}
+```
+
+**Supports:**
+- Invoices & receipts (vendor, items, totals)
+- Forms & applications (fields, signatures)
+- General documents (entities, tables, summaries)
+- Custom document types (modify prompt)
+
+---
+
+## 📁 Project Structure
+
+```
+/infra
+├── 📄 Infrastructure (Terraform)
+│   ├── main.tf                     # Core resources
+│   ├── document-storage.tf         # Blob storage + Event Grid
+│   ├── document-functions.tf       # Azure Functions
+│   ├── key-vault.tf                # Secrets management
+│   ├── cosmos-db.tf                # Database
+│   ├── service-bus.tf              # Message queues
+│   └── event-grid.tf               # Event routing
+│
+├── 🐍 Application Code
+│   ├── src/functions/               # Azure Functions (Python 3.11)
+│   │   ├── function_app.py         # Event handlers
+│   │   └── services/
+│   │       ├── claude_service.py   # AI integration
+│   │       ├── cosmos_service.py   # Database operations
+│   │       └── storage_service.py  # Blob & messaging
+│   │
+│   └── src/web/                    # React Web UI
+│       ├── src/App.js              # Document upload interface
+│       └── package.json
+│
+├── 🐳 Local Development
+│   ├── docker-compose.local.yml    # Emulators (Azurite, Cosmos)
+│   ├── scripts/setup-local.sh      # Automated setup
+│   └── .env.example                # Configuration template
+│
+└── 📚 Documentation
+    ├── README.md                   # This file
+    ├── QUICKSTART.md               # Get started in 5 min
+    ├── DOCUMENT_PROCESSING_GUIDE.md # Complete guide
+    ├── DISTRIBUTED_SYSTEMS_PATTERNS.md # Architecture patterns
+    ├── DEPLOYMENT_SUMMARY.md        # What was built
+    ├── CODACY_ANALYSIS_REPORT.md    # Code quality report
+    └── SECURITY_FIXES.md            # Security updates
+```
+
+---
+
+## 🎓 Learning & Demonstration
+
+This codebase is **designed to demonstrate enterprise-grade distributed systems patterns**.
+
+### Code Quality
+- ✅ **Grade A (9/10)** on Codacy analysis
+- ✅ **Average complexity: 2.3** (excellent maintainability)
+- ✅ **Zero code smells** detected
+- ✅ **All security vulnerabilities patched**
+
+### Patterns Demonstrated
+1. **Event-Driven Architecture** - Complete event flow with Event Grid, Service Bus, Functions
+2. **Horizontal Scaling** - Stateless services, auto-scaling, partitioned data
+3. **Resilience** - Retry logic, dead letter queues, circuit breakers
+4. **Observability** - Structured logging, distributed tracing, metrics
+5. **Polyglot Persistence** - Blob Storage (content), Cosmos DB (metadata), Service Bus (events)
+
+### Documentation
+- 📖 **50%+ code comments** explaining WHY, not just WHAT
+- 📖 **Distributed systems patterns guide** with diagrams
+- 📖 **Complete architecture documentation**
+- 📖 **Local development setup**
+- 📖 **Production deployment guide**
+
+**[Read the patterns guide →](DISTRIBUTED_SYSTEMS_PATTERNS.md)**
+
+---
+
+## 🛠️ Technology Stack
+
+### Azure Services
+- **Azure Functions** (Python 3.11) - Serverless compute
+- **Blob Storage** - Document storage with lifecycle management
+- **Cosmos DB** - NoSQL database with global distribution
+- **Service Bus** - Message queuing with guaranteed delivery
+- **Event Grid** - Event routing and distribution
+- **Key Vault** - Secrets management
+- **Application Insights** - Monitoring and analytics
+
+### AI & Libraries
+- **Claude 3.5 Sonnet** (Anthropic) - Document understanding
+- **Python 3.11** - Azure Functions runtime
+- **React 18** - Web UI
+- **Terraform** - Infrastructure as Code
+
+---
+
+## 💰 Cost Breakdown
+
+### POC/Development (~$60/month)
+| Service | Cost |
+|---------|------|
+| Azure Functions (Consumption) | $0-5 |
+| Cosmos DB (Serverless) | $25 |
+| Service Bus (Standard) | $10 |
+| Blob Storage (LRS) | $5 |
+| Event Grid | $1 |
+| Application Insights | $5 |
+| **Azure Total** | **~$50** |
+| Claude AI (1000 docs) | $10 |
+| **Grand Total** | **~$60** |
+
+### Production (~$400/month)
+- Premium Functions with VNet: $150
+- Provisioned Cosmos DB: $100
+- Service Bus Premium: $50
+- Geo-redundant storage: $20
+- Other services: $80
+- **Total: ~$400/month** + Claude API usage
+
+**Cost Optimization Features:**
+- Auto-archive old documents
+- TTL for automatic cleanup
+- Serverless/consumption pricing
+- Local dev environment (no cloud costs)
+
+---
+
+## 📋 Prerequisites
+
+### Local Development
+- Python 3.11+
+- Node.js 18+
+- Docker Desktop
+- Azure Functions Core Tools
+- Anthropic API key (or use mock mode)
+
+### Azure Deployment
+- Azure subscription
+- Azure CLI
+- Terraform 1.0+
+- Anthropic API key
+
+---
+
+## 🎬 Demo Script
+
+**5-Minute Demo:**
+
+1. **Show Architecture** (1 min)
+   - Event-driven flow diagram
+   - Explain auto-scaling and resilience
+
+2. **Local Demo** (2 min)
+   - Upload sample invoice via web UI
+   - Show real-time processing status
+   - Display extracted structured data
+
+3. **Code Walkthrough** (1 min)
+   - Show Claude service integration
+   - Highlight distributed systems patterns
+   - Point out comprehensive comments
+
+4. **Quality & Scale** (1 min)
+   - Codacy report (9/10 grade A)
+   - Auto-scaling configuration
+   - Cost optimization features
+
+**15-Minute Deep Dive:**
+Add: Terraform infrastructure, Cosmos DB partitioning, Service Bus guarantees, monitoring dashboards
+
+---
+
+## 🔧 Customization
+
+### Change Extraction Schema
+Edit `src/functions/services/claude_service.py`:
+```python
+def _get_extraction_prompt(self) -> str:
+    return """Extract YOUR custom fields here..."""
+```
+
+### Adjust Processing Limits
+Edit `variables.tf`:
+```hcl
+max_document_size_mb    = 100  # Default: 50
+document_retention_days = 90   # Default: 30
+```
+
+### Add New Document Types
+Update the Claude prompt with your schema:
+```
+For purchase orders, include:
+- po_number
+- vendor
+- delivery_date
+- line_items: [{sku, description, quantity, price}]
+```
+
+---
+
+## 📊 Monitoring
+
+### Local Development
+- Function logs in terminal
+- Web UI browser console
+- Cosmos DB emulator explorer
+- Azurite storage explorer
+
+### Azure Production
+- Application Insights dashboards
+- Cosmos DB metrics
+- Service Bus queue depths
+- Blob storage analytics
+- Custom alerts
+
+---
+
+## 🐛 Troubleshooting
+
+### Local Development
+
+**Cosmos DB won't start:**
+```bash
+# Increase Docker memory to 4GB
+# Docker Desktop → Settings → Resources → Memory
+```
+
+**Function can't find modules:**
+```bash
+cd src/functions
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+**Port 7071 already in use:**
+```bash
+lsof -i :7071
+kill -9 <PID>
+```
+
+### Azure Deployment
+
+**Function deployment fails:**
+```bash
+# Redeploy
+func azure functionapp publish <name> --python
+```
+
+**Documents not processing:**
+- Check Service Bus queue has messages
+- Check Function App logs in Azure Portal
+- Verify Event Grid subscription is active
+
+---
+
+## 🔐 Security
+
+### Features
+- ✅ Managed identities (no connection strings)
+- ✅ Key Vault for secrets
+- ✅ TLS 1.2+ everywhere
+- ✅ Private endpoints (production mode)
+- ✅ Network isolation
+- ✅ All vulnerabilities patched
+
+### Security Reports
+- [Codacy Analysis Report](CODACY_ANALYSIS_REPORT.md)
+- [Security Fixes Applied](SECURITY_FIXES.md)
+
+---
+
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| [QUICKSTART.md](QUICKSTART.md) | ⭐ Start here - 5-minute setup |
+| [DOCUMENT_PROCESSING_GUIDE.md](DOCUMENT_PROCESSING_GUIDE.md) | Complete technical guide |
+| [DISTRIBUTED_SYSTEMS_PATTERNS.md](DISTRIBUTED_SYSTEMS_PATTERNS.md) | Architecture patterns explained |
+| [DEPLOYMENT_SUMMARY.md](DEPLOYMENT_SUMMARY.md) | What was built and how to use it |
+| [CODACY_ANALYSIS_REPORT.md](CODACY_ANALYSIS_REPORT.md) | Code quality analysis |
+| [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) | File organization |
+
+---
+
+## 🤝 Support
+
+**Getting Started:** Read [QUICKSTART.md](QUICKSTART.md)
+
+**Issues:** Check troubleshooting section above
+
+**Architecture Questions:** Read [DISTRIBUTED_SYSTEMS_PATTERNS.md](DISTRIBUTED_SYSTEMS_PATTERNS.md)
+
+---
+
+## 📄 License
+
+This project is provided as-is for demonstration and educational purposes.
+
+---
+
+## 🎉 Quick Commands
 
 ```bash
-chmod +x test-connectivity.sh
-./test-connectivity.sh
+# Local Development
+./scripts/setup-local.sh        # Setup local environment
+cd src/functions && func start  # Start Functions
+cd src/web && npm start         # Start Web UI
+
+# Azure Deployment
+terraform apply                 # Deploy infrastructure
+func azure functionapp publish <name>  # Deploy functions
+
+# Testing
+curl http://localhost:7071/api/health  # Health check
+curl http://localhost:7071/api/documents  # List documents
+
+# Monitoring
+terraform output                # Show all URLs
+./.codacy/cli.sh analyze       # Run code analysis
 ```
 
-This will generate a detailed connectivity report.
+---
 
-## Key Components
+**Built with Azure + Claude AI • Event-Driven Architecture • Production-Ready**
 
-### App Service Environment v3 (Zone Redundant)
-- **Internal Load Balancer**: Web and Publishing endpoints
-- **Network Isolation**: Complete isolation within VNet
-- **Zone Redundancy**: High availability across availability zones
-- **Security**: TLS 1.0 disabled, internal encryption enabled
-- **Custom Domain**: ASE-specific DNS suffix for private access
-
-### Web Application Firewall (WAF)
-- **OWASP Core Rule Set v2.1**: SQL injection and XSS protection
-- **Bot Protection**: Microsoft Bot Manager Rule Set
-- **Rate Limiting**: DDoS protection (100 req/min per IP)
-- **Custom Rules**: Geo-blocking capability (configurable)
-- **Prevention Mode**: Blocks malicious traffic automatically
-
-### Hybrid Hosting Architecture
-- **Function App**: Elastic Premium (EP1) plan for dynamic scaling and cold start elimination
-- **Web App**: Dedicated (I1v2) plan for consistent SPA hosting performance
-- **Best of Both**: Functions get elastic scaling, Web App gets predictable resources
-- **Zone Redundancy**: Both plans support zone redundancy within ASE v3
-- **Cost Optimization**: Right-sized hosting plans for each workload type
-
-### Private Endpoints & Network Security
-- **Function App**: Private endpoint with managed identity Key Vault access
-- **Web App**: Private endpoint for SPA hosting
-- **Key Vault**: Private endpoint for PCI compliance
-- **DNS Integration**: Private DNS zones for all services
-- **NSG Rules**: HTTPS-only traffic, explicit deny-all rules
-
-### Azure Bastion & Management
-- **Secure Access**: Browser-based RDP without public IPs
-- **Management VM**: Windows Server 2022 with Azure tools pre-installed
-- **MFA Integration**: Built-in multi-factor authentication
-- **Audit Logging**: Complete access audit trail for compliance
-- **File Transfer**: Secure file copy capabilities
-
-### Hybrid Connectivity & Security
-- **Service Bus**: Standard tier for hybrid SQL connections
-- **Key Vault**: Private endpoint, public access disabled
-- **Managed Identity**: Function App secure access to secrets
-- **Connection Strings**: Encrypted storage with 90-day retention
-- **Purge Protection**: Prevents accidental secret deletion
-
-## 💰 Cost Considerations (PCI Compliant Architecture)
-
-Estimated monthly costs (varies by region and usage):
-
-### Core Infrastructure
-- **ASE v3 (Zone Redundant)**: $800-1200/month (base cost + zone redundancy)
-- **Function App - Elastic Premium (EP1)**: ~$180/month (dynamic scaling)
-- **Web App - Dedicated (I1v2)**: ~$150/month (predictable performance)
-- **Storage Account**: ~$15/month (with diagnostics)
-
-### Security & Management  
-- **Azure Bastion (Standard)**: ~$140/month (24/7 availability)
-- **Management VM (Standard_B2s)**: ~$60/month
-- **WAF Policy**: ~$5/month + request charges
-- **Private Endpoints**: ~$21/month (3 endpoints × $7)
-
-### Data & Connectivity
-- **Service Bus Standard**: ~$10/month + transactions  
-- **Key Vault (Standard)**: ~$3/month + operations
-- **Public IP (Bastion)**: ~$4/month
-
-**Total estimated**: $1,200-1,500/month
-*Premium cost for enterprise-grade PCI compliance and security*
-
-## ⏱️ Deployment Timeline
-
-1. **Networking (VNet, Subnets, NSGs)**: ~10 minutes
-2. **App Service Environment v3 (Zone Redundant)**: **90-120 minutes** ⏰
-3. **Service Plans (Elastic Premium + Dedicated)**: ~10 minutes
-4. **Function App & Web App**: ~15 minutes
-4. **Private Endpoints & DNS**: ~15 minutes
-5. **Azure Bastion**: ~10 minutes
-6. **Management VM & Tools**: ~15 minutes
-7. **Key Vault & Service Bus**: ~10 minutes
-8. **WAF Policy**: ~5 minutes
-
-**Total deployment time**: 2-3 hours (due to zone redundant ASE)
-
-## Post-Deployment Setup
-
-### 1. Hybrid Connection Manager
-Install on your on-premises server that has access to SQL Server:
-
-1. Download Hybrid Connection Manager from Azure portal
-2. Configure with connection string from Key Vault
-3. Verify connectivity to SQL Server
-
-### 2. Application Deployment
-Deploy your .NET 8 applications:
-
-```bash
-# Function App
-func azure functionapp publish func-myapp-dr
-
-# Web App
-az webapp deployment source config-zip \
-  --resource-group rg-myapp-dr \
-  --name app-myapp-dr \
-  --src app.zip
-```
-
-### 3. Management Access Setup
-Access your infrastructure securely:
-
-1. **Azure Portal** → Navigate to your resource group
-2. **Azure Bastion** → Connect to management VM
-3. **Management VM** has pre-installed tools:
-   - Azure PowerShell modules
-   - Azure CLI
-   - RSAT tools for AD management
-   - Visual Studio Code (optional)
-
-### 4. WAF Policy Verification
-The WAF policy is automatically associated with your Front Door endpoints. Verify in Azure Portal:
-- Front Door → Security → Web Application Firewall
-- Confirm policy association with Function App and Web App origins
-
-## 🔍 Monitoring and Maintenance
-
-### Security Monitoring
-- **Application Insights**: Performance and dependency tracking
-- **Azure Bastion Logs**: Administrative access audit trail  
-- **Key Vault Logs**: Secret access monitoring
-- **WAF Logs**: Blocked request analysis
-- **NSG Flow Logs**: Network traffic analysis (optional)
-
-### Health Checks & Endpoints
-Configure application health endpoints:
-- Function App: `/api/health`
-- Web App: `/health`  
-- Management VM: RDP via Bastion only
-
-### Backup and Recovery
-- **App Service**: Automatic backup configured
-- **Key Vault**: 90-day soft delete + purge protection
-- **Management VM**: Boot diagnostics enabled
-- **Infrastructure**: Terraform state backup recommended
-- **Database**: Backup via hybrid connection
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-1. **ASE v3 Deployment Timeout**
-   - Zone redundant ASE can take 2-3 hours
-   - Monitor deployment status in Azure portal
-   - Check subnet delegation is configured correctly
-
-2. **Private Endpoint Connection Issues**
-   - Verify private DNS zone configuration
-   - Check NSG rules allow HTTPS traffic
-   - Ensure Key Vault network ACLs are configured properly
-
-3. **Azure Bastion Connection Problems**
-   - Verify Bastion subnet is exactly named "AzureBastionSubnet"
-   - Check Bastion subnet size is minimum /26
-   - Ensure management VM is in allowed subnet
-
-4. **WAF Blocking Legitimate Traffic**
-   - Review WAF logs in Azure portal
-   - Adjust custom rules if needed
-   - Consider rule exclusions for false positives
-
-5. **Management VM Access Issues**
-   - Use Azure Bastion, not direct RDP
-   - Verify NSG allows traffic from Bastion subnet
-   - Check VM managed identity permissions
-
-6. **Key Vault Access Denied**
-   - Verify Function App managed identity has access policy
-   - Check Key Vault private endpoint DNS resolution
-   - Ensure network ACLs allow VNet access
-
-7. **Hybrid Connection Problems**
-   - Install Hybrid Connection Manager on on-premises server
-   - Verify Service Bus connection string
-   - Check firewall settings for outbound HTTPS (443)
-
-### Useful Commands
-
-```bash
-# Check deployment status
-terraform show
-
-# View outputs
-terraform output
-
-# Destroy infrastructure (use with caution)
-terraform destroy
-
-# Format Terraform files
-terraform fmt
-
-# Validate configuration
-terraform validate
-```
-
-## 🔐 Security Best Practices (PCI DSS Compliant)
-
-### 1. Network Security (PCI DSS Requirements 1.2, 1.3)
-- **Complete Network Isolation**: All services use private endpoints
-- **Zero Public Access**: No direct internet access to applications  
-- **HTTPS-Only Traffic**: NSG rules block HTTP, allow HTTPS only
-- **Network Segmentation**: Dedicated subnets for different functions
-- **WAF Protection**: OWASP rules block injection attacks and XSS
-
-### 2. Identity and Access Management (PCI DSS Requirements 7, 8)
-- **Managed Identities**: No stored credentials, Azure AD authentication
-- **Least Privilege**: Function App has minimal Key Vault permissions
-- **Secure Management**: Azure Bastion for administrative access only
-- **MFA Enforcement**: Built-in multi-factor authentication via Bastion
-- **Individual Accountability**: Audit trails for all administrative actions
-
-### 3. Data Protection (PCI DSS Requirements 3, 4)
-- **Encryption in Transit**: TLS 1.2+ enforced across all connections
-- **Encryption at Rest**: Azure platform encryption for all storage
-- **Key Management**: Azure Key Vault with private endpoints
-- **Secret Protection**: 90-day retention, purge protection enabled
-- **Secure Connections**: Private hybrid connections to on-premises SQL
-
-### 4. Monitoring and Logging (PCI DSS Requirements 10, 11)
-- **Access Logging**: Azure Bastion logs all administrative sessions
-- **Security Monitoring**: WAF logs blocked attacks and threats
-- **Key Vault Auditing**: All secret access attempts logged
-- **Network Monitoring**: NSG flow logs available (enable if required)
-- **Application Insights**: Performance and security event tracking
-
-### 5. Vulnerability Management (PCI DSS Requirements 6, 11.2)
-- **WAF Protection**: Real-time blocking of OWASP Top 10 attacks
-- **Automated Patching**: Azure platform handles infrastructure updates
-- **Secure Development**: Private endpoints prevent data exposure
-- **Regular Updates**: Management VM configured for Windows updates
-
-## Support and Contributing
-
-For issues and questions:
-1. Check the troubleshooting section
-2. Review Azure documentation for specific services
-3. Check Terraform provider documentation
-
-## License
-
-This infrastructure code is provided as-is for all purposes.
+🚀 **[Get Started in 5 Minutes →](QUICKSTART.md)**
