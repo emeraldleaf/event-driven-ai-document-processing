@@ -1,0 +1,202 @@
+2025/10/07 19:59:34 Running all configured tools...
+2025/10/07 19:59:34 Running tools for the specified file(s)...
+2025/10/07 19:59:34 Running eslint...
+Tool is not installed, installing...
+Installing eslint using node runtime...
+Runtime node v22.2.0 is not installed, installing...
+2025/10/07 19:59:34 Tool failed to run: failed to install eslint: failed to install runtime node: failed to download and extract runtime node: failed to extract runtime: failed to extract archive: EOF
+2025/10/07 19:59:34 Running tools for the specified file(s)...
+2025/10/07 19:59:34 Running lizard...
+================================================
+  NLOC    CCN   token  PARAM  length  location  
+------------------------------------------------
+      31      5    131      0      39 main@43-81@./scripts/setup-cosmos.py
+      19      5     86      0      25 main@25-49@./scripts/setup-storage.py
+       1      1      5      0       1 (anonymous)@18-18@./src/web/src/App.js
+       5      1     21      0       5 (anonymous)@15-19@./src/web/src/App.js
+       5      2     30      0       5 fetchDocuments@21-25@./src/web/src/App.js
+      10      2     87      0      21 App@8-28@./src/web/src/App.js
+       5      2     17      0       5 (anonymous)@30-34@./src/web/src/App.js
+      12      1     58      0      15 uploadFile@36-50@./src/web/src/App.js
+       3      1     20      0       3 viewExtractedData@58-60@./src/web/src/App.js
+       3      1     13      0       3 formatDate@80-82@./src/web/src/App.js
+       9      2     31      0       9 getStatusBadge@84-92@./src/web/src/App.js
+      19      1    275      1      30 __init__@8-37@./src/functions/utils/config.py
+       7      4     37      1       9 validate@39-47@./src/functions/utils/config.py
+       8      1     46      2       8 __init__@14-21@./src/functions/services/cosmos_service.py
+      16      2     95      1      17 _ensure_initialized@23-39@./src/functions/services/cosmos_service.py
+      10      2     65      2      10 create_document@41-50@./src/functions/services/cosmos_service.py
+      10      2     65      2      10 create_extracted_data@52-61@./src/functions/services/cosmos_service.py
+      10      2     65      2      10 create_job@63-72@./src/functions/services/cosmos_service.py
+      10      2     65      2      10 update_job@74-83@./src/functions/services/cosmos_service.py
+      26      4    124      3      31 get_documents@85-115@./src/functions/services/cosmos_service.py
+      22      4    116      2      26 get_extracted_data@117-142@./src/functions/services/cosmos_service.py
+       6      2     42      2      22 __init__@65-86@./src/functions/services/claude_service.py
+     112      5    325      4     150 extract_data@88-237@./src/functions/services/claude_service.py
+      21      1     52      2      21 _get_claude_media_type@239-259@./src/functions/services/claude_service.py
+      64      1     10      1      64 _get_extraction_prompt@261-324@./src/functions/services/claude_service.py
+      30      3     87      2      38 _calculate_confidence@326-363@./src/functions/services/claude_service.py
+      71      1    187      3      74 _mock_extraction@365-438@./src/functions/services/claude_service.py
+       5      1     27      2      20 __init__@75-94@./src/functions/services/storage_service.py
+      46      3     99      2      63 download_document@96-158@./src/functions/services/storage_service.py
+      60      2    118      4      78 upload_document@160-237@./src/functions/services/storage_service.py
+      19      2    107      3      74 move_to_processed@239-312@./src/functions/services/storage_service.py
+      24      2    145      3      68 move_to_failed@315-382@./src/functions/services/storage_service.py
+      15      2     89      2      77 send_completion_notification@385-461@./src/functions/services/storage_service.py
+      29      2     61      2      40 _parse_blob_url@464-503@./src/functions/services/storage_service.py
+      80      6    593      1     118 process_document@33-150@./src/functions/function_app.py
+      45      4    228      1      54 upload_document@155-208@./src/functions/function_app.py
+      23      2    130      1      28 get_documents@213-240@./src/functions/function_app.py
+      25      3    126      1      30 get_extracted_data@245-274@./src/functions/function_app.py
+      13      1     54      1      13 health_check@279-291@./src/functions/function_app.py
+11 file analyzed.
+==============================================================
+NLOC    Avg.NLOC  AvgCCN  Avg.token  function_cnt    file
+--------------------------------------------------------------
+     67       0.0     0.0        0.0         0     ./.codacy/tools-configs/eslint.config.mjs
+     65      31.0     5.0      131.0         1     ./scripts/setup-cosmos.py
+     38      19.0     5.0       86.0         1     ./scripts/setup-storage.py
+     10       0.0     0.0        0.0         0     ./src/web/src/index.js
+    176       5.9     1.4       31.3         9     ./src/web/src/App.js
+     30      13.0     2.5      156.0         2     ./src/functions/utils/config.py
+      0       0.0     0.0        0.0         0     ./src/functions/utils/__init__.py
+    121      14.0     2.4       80.1         8     ./src/functions/services/cosmos_service.py
+    363      50.7     2.2      117.2         6     ./src/functions/services/claude_service.py
+    267      28.3     2.0       92.3         7     ./src/functions/services/storage_service.py
+    217      37.2     3.2      226.2         5     ./src/functions/function_app.py
+
+===============================================================================================================
+No thresholds exceeded (cyclomatic_complexity > 15 or length > 1000 or nloc > 1000000 or parameter_count > 100)
+==========================================================================================
+Total nloc   Avg.NLOC  AvgCCN  Avg.token   Fun Cnt  Warning cnt   Fun Rt   nloc Rt
+------------------------------------------------------------------------------------------
+      1354      23.8     2.3      100.8       39            0      0.00    0.00
+2025/10/07 19:59:34 Running tools for the specified file(s)...
+2025/10/07 19:59:34 Running pmd...
+Tool is not installed, installing...
+Downloading pmd...
+2025/10/07 19:59:34 Tool failed to run: failed to install pmd: failed to extract tool: failed to extract zip archive /Users/joshuadell/.cache/codacy/tools/pmd-dist-7.11.0-bin.zip: zip: not a valid zip file
+2025/10/07 19:59:34 Running tools for the specified file(s)...
+2025/10/07 19:59:34 Running pylint...
+/Users/joshuadell/.cache/codacy/tools/pylint@3.3.6/venv/bin/python3: No module named pylint
+2025/10/07 19:59:34 Running tools for the specified file(s)...
+2025/10/07 19:59:34 Running revive...
+Tool is not installed, installing...
+Installing revive using go runtime...
+2025/10/07 19:59:34 Installing revive v1.7.0...
+2025/10/07 19:59:43 [REVIVE] Using config file: .codacy/tools-configs/revive.toml
+dyld[16515]: missing LC_UUID load command in /Users/joshuadell/.cache/codacy/tools/revive@1.7.0/revive
+dyld[16515]: missing LC_UUID load command
+2025/10/07 19:59:43 [REVIVE] revive exited with non-zero status (findings may be present)
+2025/10/07 19:59:43 Running tools for the specified file(s)...
+2025/10/07 19:59:43 Running semgrep...
+               
+               
+┌─────────────┐
+│ Scan Status │
+└─────────────┘
+  Scanning 44 files tracked by git with 639 Code rules:
+                                                                                                                        
+  Language      Rules   Files          Origin   Rules                                                                   
+ ─────────────────────────────        ────────────────                                                                  
+  <multilang>       8      88          Custom     639                                                                   
+  python          152       9                                                                                           
+  terraform        62       9                                                                                           
+  js               74       2                                                                                           
+  yaml             23       2                                                                                           
+  json              4       2                                                                                           
+  bash              1       2                                                                                           
+  dockerfile        4       1                                                                                           
+                                                                                                                        
+                
+                
+┌──────────────┐
+│ Scan Summary │
+└──────────────┘
+Some files were skipped or only partially analyzed.
+  Scan was limited to files tracked by git.
+
+Ran 327 rules on 44 files: 5 findings.
+                   
+                   
+┌─────────────────┐
+│ 5 Code Findings │
+└─────────────────┘
+                
+    key-vault.tf
+    ❯❱ codacy.tools-configs.terraform.azure.security.keyvault.keyvault-purge-enabled.keyvault-purge-enabled
+          Key vault should have purge protection enabled
+                                                        
+            2┆ resource "azurerm_key_vault" "main" {
+   
+     ❱ codacy.tools-configs.terraform.azure.security.keyvault.keyvault-ensure-secret-expires.keyvault-ensure-secret-
+       expires                                                                                                      
+          Ensure that the expiration date is set on all secrets
+                                                               
+           94┆ resource "azurerm_key_vault_secret" "anthropic_api_key" {
+            ⋮┆----------------------------------------
+          112┆ resource "azurerm_key_vault_secret" "document_storage_connection" {
+            ⋮┆----------------------------------------
+          130┆ resource "azurerm_key_vault_secret" "cosmos_connection" {
+            ⋮┆----------------------------------------
+          148┆ resource "azurerm_key_vault_secret" "servicebus_connection" {
+
+2025/10/07 19:59:48 Running tools for the specified file(s)...
+2025/10/07 19:59:48 Running trivy...
+2025-10-07T19:59:49-06:00	INFO	Loaded	file_path=".codacy/tools-configs/trivy.yaml"
+2025-10-07T19:59:49-06:00	INFO	[vuln] Vulnerability scanning is enabled
+2025-10-07T19:59:49-06:00	INFO	[secret] Secret scanning is enabled
+2025-10-07T19:59:49-06:00	INFO	[secret] If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+2025-10-07T19:59:49-06:00	INFO	[secret] Please see https://trivy.dev/v0.66/docs/scanner/secret#recommendation for faster secret detection
+2025-10-07T19:59:49-06:00	INFO	Number of language-specific files	num=1
+2025-10-07T19:59:49-06:00	INFO	[pip] Detecting vulnerabilities...
+
+Report Summary
+
+┌────────────────────────────────┬──────┬─────────────────┬─────────┐
+│             Target             │ Type │ Vulnerabilities │ Secrets │
+├────────────────────────────────┼──────┼─────────────────┼─────────┤
+│ src/functions/requirements.txt │ pip  │        6        │    -    │
+└────────────────────────────────┴──────┴─────────────────┴─────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+
+src/functions/requirements.txt (pip)
+====================================
+Total: 6 (LOW: 1, MEDIUM: 3, HIGH: 2, CRITICAL: 0)
+
+┌────────────────┬────────────────┬──────────┬────────┬───────────────────┬───────────────┬───────────────────────────────────────────────────────────┐
+│    Library     │ Vulnerability  │ Severity │ Status │ Installed Version │ Fixed Version │                           Title                           │
+├────────────────┼────────────────┼──────────┼────────┼───────────────────┼───────────────┼───────────────────────────────────────────────────────────┤
+│ aiohttp        │ CVE-2024-30251 │ HIGH     │ fixed  │ 3.9.3             │ 3.9.4         │ aiohttp: DoS when trying to parse malformed POST requests │
+│                │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2024-30251                │
+│                ├────────────────┼──────────┤        │                   │               ├───────────────────────────────────────────────────────────┤
+│                │ CVE-2024-27306 │ MEDIUM   │        │                   │               │ aiohttp: XSS on index pages for static file handling      │
+│                │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2024-27306                │
+│                ├────────────────┤          │        │                   ├───────────────┼───────────────────────────────────────────────────────────┤
+│                │ CVE-2024-52304 │          │        │                   │ 3.10.11       │ aiohttp: aiohttp vulnerable to request smuggling due to   │
+│                │                │          │        │                   │               │ incorrect parsing of chunk...                             │
+│                │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2024-52304                │
+│                ├────────────────┼──────────┤        │                   ├───────────────┼───────────────────────────────────────────────────────────┤
+│                │ CVE-2025-53643 │ LOW      │        │                   │ 3.12.14       │ aiohttp: AIOHTTP HTTP Request/Response Smuggling          │
+│                │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2025-53643                │
+├────────────────┼────────────────┼──────────┤        ├───────────────────┼───────────────┼───────────────────────────────────────────────────────────┤
+│ azure-identity │ CVE-2024-35255 │ MEDIUM   │        │ 1.15.0            │ 1.16.1        │ azure-identity: Azure Identity Libraries Elevation of     │
+│                │                │          │        │                   │               │ Privilege Vulnerability in                                │
+│                │                │          │        │                   │               │ github.com/Azure/azure-sdk-for-go/sdk/azidentity          │
+│                │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2024-35255                │
+├────────────────┼────────────────┼──────────┤        ├───────────────────┼───────────────┼───────────────────────────────────────────────────────────┤
+│ pillow         │ CVE-2024-28219 │ HIGH     │        │ 10.2.0            │ 10.3.0        │ python-pillow: buffer overflow in _imagingcms.c           │
+│                │                │          │        │                   │               │ https://avd.aquasec.com/nvd/cve-2024-28219                │
+└────────────────┴────────────────┴──────────┴────────┴───────────────────┴───────────────┴───────────────────────────────────────────────────────────┘
+
+📣 [34mNotices:[0m
+  - Version 0.67.0 of Trivy is now available, current version is 0.66.0
+
+To suppress version checks, run Trivy scans with the --skip-version-check flag
+
+2025/10/07 19:59:49 Running tools for the specified file(s)...
+2025/10/07 19:59:49 Running dartanalyzer...
+2025/10/07 19:59:49 No config file found, using tool defaults

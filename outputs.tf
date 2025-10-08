@@ -1,3 +1,5 @@
+# Core Infrastructure Outputs
+
 output "resource_group_name" {
   description = "The name of the resource group"
   value       = azurerm_resource_group.main.name
@@ -8,72 +10,152 @@ output "virtual_network_id" {
   value       = azurerm_virtual_network.main.id
 }
 
-output "ase_name" {
-  description = "The name of the App Service Environment v3"
-  value       = azurerm_app_service_environment_v3.main.name
+# Document Processing Outputs
+
+output "document_function_app_name" {
+  description = "The name of the document processing Function App"
+  value       = azurerm_linux_function_app.document_processor.name
 }
 
-output "ase_dns_suffix" {
-  description = "The DNS suffix for the ASE v3"
-  value       = azurerm_app_service_environment_v3.main.dns_suffix
+output "document_function_app_url" {
+  description = "URL of the document processing function app"
+  value       = "https://${azurerm_linux_function_app.document_processor.default_hostname}"
 }
 
-output "function_app_name" {
-  description = "The name of the Function App"
-  value       = azurerm_windows_function_app.main.name
+output "document_storage_account_name" {
+  description = "Name of the document storage account"
+  value       = azurerm_storage_account.documents.name
 }
 
-output "function_app_hostname" {
-  description = "The default hostname of the Function App"
-  value       = azurerm_windows_function_app.main.default_hostname
+output "document_storage_primary_blob_endpoint" {
+  description = "Primary blob endpoint for document storage"
+  value       = azurerm_storage_account.documents.primary_blob_endpoint
 }
 
-output "web_app_name" {
-  description = "The name of the Web App"
-  value       = azurerm_windows_web_app.main.name
+output "document_storage_static_website_url" {
+  description = "Static website URL for document upload UI"
+  value       = azurerm_storage_account.documents.primary_web_endpoint
 }
 
-output "web_app_hostname" {
-  description = "The default hostname of the Web App"
-  value       = azurerm_windows_web_app.main.default_hostname
+output "document_storage_connection_string" {
+  description = "Connection string for local development"
+  value       = azurerm_storage_account.documents.primary_connection_string
+  sensitive   = true
 }
 
-output "private_endpoint_function_ip" {
-  description = "The private IP address of the Function App private endpoint"
-  value       = azurerm_private_endpoint.function_app.private_service_connection[0].private_ip_address
-}
-
-output "private_endpoint_webapp_ip" {
-  description = "The private IP address of the Web App private endpoint"
-  value       = azurerm_private_endpoint.web_app.private_service_connection[0].private_ip_address
-}
+# Key Vault Outputs
 
 output "key_vault_name" {
   description = "The name of the Key Vault"
   value       = azurerm_key_vault.main.name
 }
 
+output "key_vault_uri" {
+  description = "URI of the Key Vault"
+  value       = azurerm_key_vault.main.vault_uri
+}
+
+output "anthropic_api_key_secret_id" {
+  description = "Key Vault secret ID for Anthropic API key"
+  value       = azurerm_key_vault_secret.anthropic_api_key.id
+}
+
+# Service Bus Outputs
+
 output "servicebus_namespace_name" {
-  description = "The name of the Service Bus namespace for hybrid connections"
-  value       = azurerm_servicebus_namespace.hybrid.name
+  description = "The name of the Service Bus namespace"
+  value       = azurerm_servicebus_namespace.main.name
 }
 
-output "hybrid_connection_name" {
-  description = "The name of the hybrid connection"
-  value       = azurerm_servicebus_hybrid_connection.sql.name
+output "servicebus_namespace_hostname" {
+  description = "The hostname of the Service Bus namespace"
+  value       = "${azurerm_servicebus_namespace.main.name}.servicebus.windows.net"
 }
 
-output "function_app_plan_name" {
-  description = "The name of the Elastic Premium plan for Functions"
-  value       = azurerm_service_plan.functions.name
+output "document_processing_queue_name" {
+  description = "Name of the document processing queue"
+  value       = azurerm_servicebus_queue.document_processing.name
 }
 
-output "web_app_plan_name" {
-  description = "The name of the Dedicated plan for Web App"
-  value       = azurerm_service_plan.webapp.name
+# Cosmos DB Outputs
+
+output "cosmos_db_endpoint" {
+  description = "The endpoint of the Cosmos DB account"
+  value       = azurerm_cosmosdb_account.main.endpoint
 }
 
-output "function_app_plan_sku" {
-  description = "The SKU of the Function App hosting plan"
-  value       = azurerm_service_plan.functions.sku_name
+output "cosmos_db_id" {
+  description = "The ID of the Cosmos DB account"
+  value       = azurerm_cosmosdb_account.main.id
+}
+
+output "cosmos_database_name" {
+  description = "Name of the Cosmos DB database"
+  value       = azurerm_cosmosdb_sql_database.application.name
+}
+
+# Event Grid Outputs
+
+output "document_storage_event_grid_topic_id" {
+  description = "ID of the Event Grid system topic for document storage"
+  value       = azurerm_eventgrid_system_topic.document_storage.id
+}
+
+# Application Insights Outputs
+
+output "application_insights_instrumentation_key" {
+  description = "The instrumentation key for Application Insights"
+  value       = azurerm_application_insights.main.instrumentation_key
+  sensitive   = true
+}
+
+output "application_insights_connection_string" {
+  description = "The connection string for Application Insights"
+  value       = azurerm_application_insights.main.connection_string
+  sensitive   = true
+}
+
+# Quick Start Commands
+
+output "quick_start_local" {
+  description = "Commands to run the system locally"
+  value = <<-EOT
+
+  🚀 Quick Start - Local Development:
+
+  1. Setup environment:
+     cp .env.example .env
+     # Edit .env and set ENABLE_MOCK_AI=true for testing
+
+  2. Run setup:
+     ./scripts/setup-local.sh
+
+  3. Start Functions (Terminal 1):
+     cd src/functions && func start
+
+  4. Start Web UI (Terminal 2):
+     cd src/web && npm start
+
+  5. Open: http://localhost:3000
+
+  EOT
+}
+
+output "quick_start_azure" {
+  description = "Quick start guide for Azure deployment"
+  value = <<-EOT
+
+  ☁️ Azure Deployment URLs:
+
+  📦 Function App: https://${azurerm_linux_function_app.document_processor.default_hostname}
+  🌐 Web UI: ${azurerm_storage_account.documents.primary_web_endpoint}
+  🔑 Key Vault: ${azurerm_key_vault.main.vault_uri}
+  📊 Cosmos DB: ${azurerm_cosmosdb_account.main.endpoint}
+
+  📋 Next Steps:
+  1. Deploy function code: func azure functionapp publish ${azurerm_linux_function_app.document_processor.name}
+  2. Upload web UI to storage account: ${azurerm_storage_account.documents.name}
+  3. Test upload at the Function URL above
+
+  EOT
 }

@@ -1,20 +1,37 @@
 # Example terraform.tfvars file - copy to terraform.tfvars and update values
 
-# Basic Configuration
-location    = "East US 2"
-environment = "dr"
-app_name    = "myapp"
+# Azure Region
+location = "eastus2"
 
-# Azure Front Door Configuration
-existing_front_door_id = "/subscriptions/YOUR-SUBSCRIPTION-ID/resourceGroups/YOUR-RG/providers/Microsoft.Cdn/profiles/YOUR-FRONT-DOOR-NAME"
+# Environment (dev, staging, production)
+environment = "dev"
 
-# On-premises SQL Server Configuration
+# Application Name (used for resource naming)
+app_name = "docprocessor"
+
+# Anthropic API Key (required for document processing)
+anthropic_api_key = "sk-ant-your-api-key-here"
+
+# Cost Optimization (true for POC/dev, false for production)
+enable_cost_optimization = true
+
+# Document Settings
+max_document_size_mb    = 50
+document_retention_days = 30
+
+# Optional: Existing Azure Front Door (leave empty if not using)
+existing_front_door_id = ""
+
+# Optional: On-premises SQL Server (leave empty if not using)
 on_prem_sql_server = {
-  server_name   = "your-sql-server.company.local"
-  database_name = "YourDatabase"
+  server_name   = ""
+  database_name = ""
   port          = 1433
 }
 
-# ASE and App Service Plan Configuration
+# Management VM Password (required for ASE management)
+management_vm_admin_password = "YourSecurePassword123!"
+
+# ASE Pricing Tier (I1v2 is minimum for cost optimization)
 ase_pricing_tier      = "I1v2"
 app_service_plan_sku  = "I1v2"

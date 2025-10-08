@@ -65,3 +65,35 @@ variable "management_vm_admin_password" {
     error_message = "Management VM password must be at least 12 characters long for security compliance."
   }
 }
+
+variable "anthropic_api_key" {
+  description = "Anthropic API key for Claude document processing"
+  type        = string
+  sensitive   = true
+  validation {
+    condition     = length(var.anthropic_api_key) > 0
+    error_message = "Anthropic API key must be provided."
+  }
+}
+
+variable "enable_cost_optimization" {
+  description = "Enable cost optimization features (use for POC/dev environments)"
+  type        = bool
+  default     = true
+}
+
+variable "max_document_size_mb" {
+  description = "Maximum document size in MB"
+  type        = number
+  default     = 50
+  validation {
+    condition     = var.max_document_size_mb > 0 && var.max_document_size_mb <= 100
+    error_message = "Document size must be between 1 and 100 MB."
+  }
+}
+
+variable "document_retention_days" {
+  description = "Number of days to retain processed documents before archiving"
+  type        = number
+  default     = 30
+}
